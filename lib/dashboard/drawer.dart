@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rwu_cafeteria_system/screens/food/add_food_item.dart';
 import 'package:rwu_cafeteria_system/screens/food/food_items_view.dart';
+import 'package:rwu_cafeteria_system/screens/orders/orders.dart';
 
 class CustomDrawer extends StatefulWidget {
   final AnimationController animationController;
@@ -111,6 +112,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                     ),
                     onTap: () {
                       //  Get.to(OrderPage());
+                       Get.to(OrdersScreen());
                     },
                   ),
                  

@@ -6,6 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+
+
+
 class OrdersScreen extends StatelessWidget {
   final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
   Future<pw.Document> generateReceiptPdf(Map<String, dynamic> data) async {
@@ -86,16 +89,36 @@ class OrdersScreen extends StatelessWidget {
   return pdf;
 }
 
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        title: Text('Orders'),
+    return DefaultTabController(
+      length: 3, // Number of tabs
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: primaryColor,
+          title: Text('Orders'),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: 'Pending'),
+              Tab(text: 'Approved'),
+              Tab(text: 'Rejected'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            buildPendingOrders(),
+            buildApprovedOrders(),
+            buildRejectedOrders(),
+          ],
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firebaseFirestore.collection('orders').snapshots(),
+    );
+  }
+
+  Widget buildPendingOrders() {
+    return StreamBuilder<QuerySnapshot>(
+        stream: _firebaseFirestore.collection('orders').where('is_reject',isEqualTo: false).where('is_aprove',isEqualTo: false).snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Something went wrong'));
@@ -215,7 +238,7 @@ class OrdersScreen extends StatelessWidget {
         ),
       ),
       onPressed: () {
-        document.reference.update({'approved': 'approved'});
+        document.reference.update({'is_aprove': true}).then((value) =>  Get.snackbar("Approved", "Order Approved"));
       },
     ),
     TextButton(
@@ -227,7 +250,8 @@ class OrdersScreen extends StatelessWidget {
         ),
       ),
       onPressed: () {
-        document.reference.update({'approved': 'rejected'});
+        
+        document.reference.update({'is_reject': true}).then((value) =>  Get.snackbar("Rejected", "Order Rejected"));
       },
     ),
   ],
@@ -243,6 +267,157 @@ class OrdersScreen extends StatelessWidget {
             }).toList(),
           );
         },
+      );
+  }
+
+  Widget buildRejectedOrders() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firebaseFirestore
+          .collection('orders')
+          .where('is_reject',isEqualTo: true).where('is_aprove',isEqualTo: false)
+          .snapshots(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Something went wrong'));
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: Text("Loading"));
+        }
+
+        return ListView(
+          children: snapshot.data!.docs.map((DocumentSnapshot document) {
+            var id = document.id;
+            Map<String, dynamic> data =
+                document.data()! as Map<String, dynamic>;
+            return buildOrderItem(data, id);
+          }).toList(),
+        );
+      },
+    );
+  }
+   Widget buildApprovedOrders() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firebaseFirestore
+          .collection('orders')
+         .where('is_aprove',isEqualTo: true)
+          .snapshots(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Something went wrong'));
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: Text("Loading"));
+        }
+
+        return ListView(
+          children: snapshot.data!.docs.map((DocumentSnapshot document) {
+            var id = document.id;
+            Map<String, dynamic> data =
+                document.data()! as Map<String, dynamic>;
+            return buildOrderItem(data, id);
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget buildOrderItem(Map<String, dynamic> data, String id) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            tileColor: Colors.grey[200],
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data['name'],
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                Text(
+                  data['email'],
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    launch("tel:${data['phone']}");
+                  },
+                  child: Text(
+                    data['phone'],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                Text(
+                  "Total: " + data['totalPrice'].toString() + " /Rs",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            subtitle: Column(
+              children: [
+                Column(
+                  children: data['item'].map<Widget>((item) {
+                    return ListTile(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          item['imgUrl'],
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      title: Text(
+                        item['name'],
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Price: ${item['price']}',
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+               
+                SizedBox(height: 8),
+                if (data['is_aprove'])
+                  Text('Order Approved',
+                      style: TextStyle(color: Color.fromARGB(255, 18, 95, 237)))
+                else if (data['is_reject'])
+                  Text('Order Rejected', style: TextStyle(color: Colors.red))
+                
+              ],
+            ),
+          ),
+          SizedBox(height: 8),
+        ],
       ),
     );
   }

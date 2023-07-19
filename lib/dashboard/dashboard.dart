@@ -40,6 +40,7 @@ class _DashboarddState extends State<Dashboardd> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // backgroundColor: Colors.amber,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
         child: AppBar(
@@ -59,6 +60,13 @@ class _DashboarddState extends State<Dashboardd> with SingleTickerProviderStateM
       body: SafeArea(
         child: SingleChildScrollView(
           child: Container(
+             decoration: BoxDecoration(
+    gradient: LinearGradient(
+      colors: [Color.fromARGB(255, 185, 220, 238), Color.fromARGB(255, 96, 139, 124)], // Replace with your desired gradient colors
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+    ),
+  ),
             height: Get.height / 0.8,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

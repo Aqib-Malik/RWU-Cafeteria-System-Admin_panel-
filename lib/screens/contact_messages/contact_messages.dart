@@ -42,9 +42,9 @@ class ContactFormScreen extends StatelessWidget {
                   color: Colors.white,
                 ),
                 child: InkWell(
-                  onLongPress: ()async{
+                  onLongPress: () async {
+                    // Delete the contact form when long-pressed
                     await FirebaseFirestore.instance.collection('contact_forms').doc(document.id).delete();
-
                   },
                   child: ListTile(
                     leading: Icon(Icons.person),
